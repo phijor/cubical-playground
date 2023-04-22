@@ -1,0 +1,5 @@
+# Agda interface files
+*.agdai
+
+# Agda → Haskell compilation output
+MAlonzo/

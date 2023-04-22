@@ -1,0 +1,4 @@
+name: cubical-playground
+depend: cubical
+include: .
+flags: --cubical --postfix-projections --allow-unsolved-metas
