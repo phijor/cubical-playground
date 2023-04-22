@@ -5,6 +5,7 @@
 --
 -- A generic construction of a small universe of types, defined via induction-recursion.
 
+{-# OPTIONS --lossy-unification #-}
 module Playground.Tardis where
 
 open import Playground.Prelude
@@ -109,21 +110,19 @@ module Tardis
 
   Tardis→SkelStrWitness : (x : Tardis) → SkelStr→Witness (Tardis→SkelStr x) ≡ (x , idEquiv (El x))
   Tardis→SkelStrWitness (put a) = Tardis→SkelStrPutWitness a
-  Tardis→SkelStrWitness (uni x y α i) = {! madness x y α i !} {- See below -} where
+  Tardis→SkelStrWitness (uni x y α i) = madness x y α i where
     module _ (x y : Tardis) (α : El x ≃ El y) where
-      P : I → Type (ℓ-max ℓ ℓ')
-      P i = SkelStr→Witness (Tardis→SkelStr (uni x y α i)) ≡ (uni x y α i , idEquiv (El (uni x y α i)))
+      Motive : I → Type (ℓ-max ℓ ℓ')
+      Motive i = SkelStr→Witness (Tardis→SkelStr (uni x y α i)) ≡ (uni x y α i , idEquiv (El (uni x y α i)))
 
-      isPropP : (i : I) → isProp (P i)
-      abstract
-        isPropP i = isProp→isSet (isPropElWitness {Y = ua α i}) (SkelStr→Witness (Tardis→SkelStr (uni x y α i))) (uni x y α i , idEquiv (ua α i))
-  
-      -- XXX: Here lies madness. Uncomment and see Agda go wild.
-      -- Agda accepts the term, given enought RAM (25GB is enough?)
+      isPropMotive : (i : I) → isProp (Motive i)
+      isPropMotive i = isProp→isSet (isPropElWitness {Y = ua α i}) (SkelStr→Witness (Tardis→SkelStr (uni x y α i))) (uni x y α i , idEquiv (ua α i))
+
+      -- XXX: This requires `--lossy-unification`. Without lossy unification,
+      -- Agda accepts the term given enought RAM (25GB is enough?)
       -- but takes an hour or so to finish on a 7th gen laptop.
-
-      -- madness : PathP P (Tardis→SkelStrWitness x) (Tardis→SkelStrWitness y)
-      -- madness = isProp→PathP isPropP (Tardis→SkelStrWitness x) (Tardis→SkelStrWitness y)
+      madness : PathP (λ i → Motive i) (Tardis→SkelStrWitness x) (Tardis→SkelStrWitness y)
+      madness = isProp→PathP isPropMotive (Tardis→SkelStrWitness x) (Tardis→SkelStrWitness y)
 
   Tardis→Skel : Tardis → Skel
   Tardis→Skel x = El x , Tardis→SkelStr x
@@ -131,44 +130,39 @@ module Tardis
   Skel→Tardis : Skel → Tardis
   Skel→Tardis (Y , sk) = SkelStr→Witness sk .fst
 
-  module _ {- (embB : isEmbedding B) -} where
+  module _ where
     skeletonIso : Iso Tardis Skel
     skeletonIso .Iso.fun = Tardis→Skel
     skeletonIso .Iso.inv = Skel→Tardis
-    skeletonIso .Iso.rightInv (Y , sk) = Σ≡Prop isPropSkelStr {! !} where
+    skeletonIso .Iso.rightInv (Y , sk) = Σ≡Prop isPropSkelStr (uncurry rinv witness) where
       witness : Σ[ x ∈ Tardis ] El x ≃ Y
       witness = SkelStr→Witness sk
 
       module _ (x : Tardis) (α : El x ≃ Y) where
+        witnessSkel : (Y , sk) ≡ Tardis→Skel x
+        witnessSkel = sym (SkelPath (ua α))
+
         rinv : Tardis→Skel (Skel→Tardis (Y , sk)) .fst ≡ Y
         rinv =
-          El (Skel→Tardis (Y , sk)) ≡⟨ {! !} ⟩
-          El (SkelStr→Witness (Tardis→SkelStr x) .fst) ≡⟨ {! !} ⟩
+          El (Skel→Tardis (Y , sk)) ≡⟨ cong (El ∘ Skel→Tardis) witnessSkel ⟩
+          El (Skel→Tardis (Tardis→Skel x)) ≡⟨⟩
+          El (SkelStr→Witness (Tardis→SkelStr x) .fst) ≡⟨ cong (El ∘ fst) (Tardis→SkelStrWitness x) ⟩
           El x ≡⟨ ua α ⟩
           Y ∎
 
     skeletonIso .Iso.leftInv = linv where
-      linv : (x : Tardis) → SkelStr→Witness (elimElProp isPropSkelStr (λ (a : A) → ∣ a , idEquiv (B a) ∣₁) x) .fst ≡ x
-      linv x = {! !}
-
-  isEquiv-Tardis→Skel : isEquiv Tardis→Skel
-  isEquiv-Tardis→Skel .equiv-proof (Y , sk) = ctr , {! !} where
-    P : Tardis → Type (ℓ-suc ℓ')
-    P x = ∥ Σ[ Y ∈ Type ℓ' ] Y ≃ (El x) ∥₁
-
-    get : Tardis
-    get = propImageElim P {!isPropPropTrunc !} (λ { (a , _) → put a }) (λ { (a , γ) → {! !} }) sk
-
-    ctr : Σ[ x ∈ Tardis ] Tardis→Skel x ≡ (Y , sk)
-    ctr = get , {! !}
+      linv : (x : Tardis) → SkelStr→Witness (Tardis→SkelStr x) .fst ≡ x
+      linv x = cong fst (Tardis→SkelStrWitness x)
 
   skeletonEquiv : Tardis ≃ Skel
-  skeletonEquiv = Tardis→Skel , isEquiv-Tardis→Skel
+  skeletonEquiv = isoToEquiv skeletonIso
 
 module Example where
+  open import Cubical.Foundations.Transport using (substEquiv)
+  open import Cubical.Foundations.Equiv.Properties using (invEquivEquiv)
+  open import Cubical.Functions.Embedding
   open import Cubical.Data.SumFin
   open import Cubical.Data.FinSet
-  open import Cubical.Functions.Embedding
 
   FinTardis : Type
   FinTardis = Tardis.Tardis ℕ Fin
@@ -180,9 +174,20 @@ module Example where
   isGroupoidFinTardis : isGroupoid FinTardis
   isGroupoidFinTardis = isOfHLevelTardis {2} λ k → isSetFin {k}
 
-  -- It's equivalent to a large universe, compare this to `FinSet'` below:
-  FinTardis≃FinSet : FinTardis ≃ (Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Fin n ≃ Y ∥₁)
-  FinTardis≃FinSet = skeletonEquiv
+  FinSet' : (ℓ : Level) → Type (ℓ-suc ℓ)
+  FinSet' ℓ = TypeWithStr ℓ isFinSet'
 
-  _ : (Σ[ Y ∈ Type ] isFinSet' Y) ≡ (Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Y ≃ Fin n ∥₁)
-  _ = refl
+  FinSet≃FinSet' : ∀ {ℓ} → FinSet ℓ ≃ FinSet' ℓ
+  FinSet≃FinSet' = Sigma.Σ-cong-equiv-snd λ Y → Univalence.pathToEquiv isFinSet≡isFinSet'
+
+  -- It's equivalent to a large universe of finite sets:
+  FinTardis≃FinSet : FinTardis ≃ FinSet ℓ-zero
+  FinTardis≃FinSet =
+    FinTardis ≃⟨ skeletonEquiv ⟩
+    Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Fin n ≃ Y ∥₁ ≃⟨ flip≃ ⟩
+    Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Y ≃ Fin n ∥₁ ≃⟨ idEquiv _ ⟩
+    FinSet' ℓ-zero                          ≃⟨ invEquiv FinSet≃FinSet' ⟩
+    FinSet ℓ-zero ≃∎
+
+    where
+      flip≃ = Sigma.Σ-cong-equiv-snd (λ Y → PT.propTrunc≃ (Sigma.Σ-cong-equiv-snd λ n → invEquivEquiv))
