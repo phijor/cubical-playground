@@ -8,22 +8,30 @@
 {-# OPTIONS --lossy-unification #-}
 module Playground.Tardis where
 
-open import Playground.Prelude
+open import Playground.Prelude hiding (empty)
 open import Playground.Proposition
 
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Equiv renaming (_■ to _≃∎)
+open import Cubical.Foundations.Equiv.Properties using (invEquivEquiv)
 open import Cubical.Foundations.Univalence using (ua)
 open import Cubical.Foundations.Isomorphism
+open import Cubical.Foundations.Path
 open import Cubical.Foundations.Structure
 import Cubical.Foundations.Univalence as Univalence
 import Cubical.Foundations.Univalence.Universe as UU
 
-open import Cubical.Functions.Embedding using (isEmbedding ; isEmbedding→Inj ; isEmbedding→hasPropFibers)
-open import Cubical.Functions.Image using (Image ; isPropIsInImage)
+open import Cubical.Functions.Embedding
+  using
+    ( isEmbedding
+    ; isEmbedding→Inj
+    ; hasPropFibers
+    ; isEmbedding→hasPropFibers
+
+    )
 open import Cubical.Data.Sigma as Sigma using (Σ≡Prop ; map-snd)
 open import Cubical.Data.Nat.Base
-open import Cubical.HITs.PropositionalTruncation as PT
+open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁ ; ∣_∣₁)
 
 module Tardis
   {ℓ ℓ'}
@@ -73,33 +81,62 @@ module Tardis
     ι : Iso (x ≡ y) (El x ≡ El y)
     ι = Uni.pathIso x y
 
-  isPropElWitness : {Y : Type ℓ'} → isProp (Σ[ x ∈ Tardis ] El x ≃ Y)
-  isPropElWitness {Y = Y} = isOfHLevelRetractFromIso 1 (Sigma.Σ-cong-iso-snd ElUnivalenceIso) (hasPropFibersEl Y) where
-    ElUnivalenceIso : ∀ x → Iso (El x ≃ Y) (El x ≡ Y)
-    ElUnivalenceIso x = invIso (Univalence.univalenceIso {A = El x} {B = Y})
-    toFiber : Σ[ x ∈ Tardis ] El x ≃ Y → fiber El Y
-    toFiber = map-snd ua
+  isPropElWitness : {Y : Type ℓ'} → isProp (Σ[ x ∈ Tardis ] Y ≃ El x)
+  isPropElWitness {Y = Y} = isOfHLevelRespectEquiv 1 (Sigma.Σ-cong-equiv-snd ElUnivalenceEquiv) (hasPropFibersEl Y) where
+    ElUnivalenceEquiv : ∀ x → (El x ≡ Y) ≃ (Y ≃ El x)
+    ElUnivalenceEquiv x = isoToEquiv symIso ∙ₑ Univalence.univalence {A = Y} {B = El x}
 
   tyEquivToWitness : ∀ {a : A}
     → (Y : Type ℓ')
-    → ∥ B a ≃ Y ∥₁
-    → Σ[ x ∈ Tardis ] El x ≃ Y
+    → ∥ Y ≃ B a ∥₁
+    → Σ[ x ∈ Tardis ] Y ≃ El x
   tyEquivToWitness {a = a} Y = PT.rec (isPropElWitness {Y}) (put a ,_)
 
   SkelStr : (Y : Type ℓ') → Type (ℓ-max ℓ ℓ')
-  SkelStr Y = ∥ Σ[ a ∈ A ] B a ≃ Y ∥₁
+  SkelStr Y = ∥ Σ[ a ∈ A ] Y ≃ B a ∥₁
 
-  SkelStr→Witness : {Y : Type ℓ'} → SkelStr Y → Σ[ x ∈ Tardis ] El x ≃ Y
+  SkelStr→Witness : {Y : Type ℓ'} → SkelStr Y → Σ[ x ∈ Tardis ] Y ≃ El x
   SkelStr→Witness = PT.rec isPropElWitness λ { (a , α) → put a , α }
 
   isPropSkelStr : (Y : Type ℓ') → isProp (SkelStr Y)
-  isPropSkelStr Y = isPropPropTrunc
+  isPropSkelStr Y = PT.isPropPropTrunc
 
   Skel : Type (ℓ-max ℓ (ℓ-suc ℓ'))
   Skel = TypeWithStr ℓ' SkelStr
 
   SkelPath : {S T : Skel} → ⟨ S ⟩ ≡ ⟨ T ⟩ → S ≡ T
   SkelPath = Σ≡Prop isPropSkelStr
+
+  SkelStr∞ : (Y : Type ℓ') → Type (ℓ-max ℓ ℓ')
+  SkelStr∞ Y = Σ[ a ∈ A ] ∥ Y ≃ B a ∥₁
+
+  Skel∞ : Type (ℓ-max ℓ (ℓ-suc ℓ'))
+  Skel∞ = TypeWithStr ℓ' SkelStr∞
+
+  SkelStr∞→SkelStr : ∀ {Y} → SkelStr∞ Y → SkelStr Y
+  SkelStr∞→SkelStr {Y = Y} = uncurry (λ a → PT.map (a ,_))
+
+  module _ (setA : isSet A) (injB : (x y : A) → B x ≡ B y → x ≡ y) where
+    isPropSkelStr∞ : (Y : Type ℓ') → isProp (SkelStr∞ Y)
+    isPropSkelStr∞ Y (x , ∣α∣) (y , ∣β∣) = Σ≡Prop (λ _ → PT.isPropPropTrunc) goal where
+      lem : (α : Y ≃ B x) (β : Y ≃ B y) → x ≡ y
+      lem α β = injB x y (ua γ) where
+        γ : B x ≃ B y
+        γ = invEquiv α ∙ₑ β
+
+      goal : x ≡ y
+      goal = PT.rec2 (setA x y) lem ∣α∣ ∣β∣
+
+    SkelStr→SkelStr∞ : ∀ {Y} → SkelStr Y → SkelStr∞ Y
+    SkelStr→SkelStr∞ {Y} = PT.rec (isPropSkelStr∞ Y) f where
+      f : Σ[ a ∈ A ] Y ≃ B a → SkelStr∞ Y
+      f = map-snd ∣_∣₁
+
+    SkelStr∞≃SkelStr : ∀ Y → SkelStr∞ Y ≃ SkelStr Y
+    SkelStr∞≃SkelStr Y = propBiimpl→Equiv (isPropSkelStr∞ Y) (isPropSkelStr Y) SkelStr∞→SkelStr SkelStr→SkelStr∞
+
+    Skel∞≃Skel : Skel∞ ≃ Skel
+    Skel∞≃Skel = Sigma.Σ-cong-equiv-snd SkelStr∞≃SkelStr
 
   Tardis→SkelStr : (x : Tardis) → SkelStr (El x)
   Tardis→SkelStr = elimElProp isPropSkelStr λ (a : A) → ∣ a , idEquiv (B a) ∣₁
@@ -135,19 +172,19 @@ module Tardis
     skeletonIso .Iso.fun = Tardis→Skel
     skeletonIso .Iso.inv = Skel→Tardis
     skeletonIso .Iso.rightInv (Y , sk) = Σ≡Prop isPropSkelStr (uncurry rinv witness) where
-      witness : Σ[ x ∈ Tardis ] El x ≃ Y
+      witness : Σ[ x ∈ Tardis ] Y ≃ El x
       witness = SkelStr→Witness sk
 
-      module _ (x : Tardis) (α : El x ≃ Y) where
+      module _ (x : Tardis) (α : Y ≃ El x) where
         witnessSkel : (Y , sk) ≡ Tardis→Skel x
-        witnessSkel = sym (SkelPath (ua α))
+        witnessSkel = SkelPath (ua α)
 
         rinv : Tardis→Skel (Skel→Tardis (Y , sk)) .fst ≡ Y
         rinv =
           El (Skel→Tardis (Y , sk)) ≡⟨ cong (El ∘ Skel→Tardis) witnessSkel ⟩
           El (Skel→Tardis (Tardis→Skel x)) ≡⟨⟩
           El (SkelStr→Witness (Tardis→SkelStr x) .fst) ≡⟨ cong (El ∘ fst) (Tardis→SkelStrWitness x) ⟩
-          El x ≡⟨ ua α ⟩
+          El x ≡⟨ sym (ua α) ⟩
           Y ∎
 
     skeletonIso .Iso.leftInv = linv where
@@ -157,11 +194,12 @@ module Tardis
   skeletonEquiv : Tardis ≃ Skel
   skeletonEquiv = isoToEquiv skeletonIso
 
-module Example where
+module FinExample where
   open import Cubical.Foundations.Transport using (substEquiv)
-  open import Cubical.Foundations.Equiv.Properties using (invEquivEquiv)
   open import Cubical.Functions.Embedding
+  open import Cubical.Data.Empty.Base as Empty using (⊥)
   open import Cubical.Data.SumFin
+  open import Cubical.Data.Nat.Properties
   open import Cubical.Data.FinSet
 
   FinTardis : Type
@@ -177,17 +215,19 @@ module Example where
   FinSet' : (ℓ : Level) → Type (ℓ-suc ℓ)
   FinSet' ℓ = TypeWithStr ℓ isFinSet'
 
-  FinSet≃FinSet' : ∀ {ℓ} → FinSet ℓ ≃ FinSet' ℓ
-  FinSet≃FinSet' = Sigma.Σ-cong-equiv-snd λ Y → Univalence.pathToEquiv isFinSet≡isFinSet'
+  FinInj : (k l : ℕ) → Fin k ≡ Fin l → k ≡ l
+  FinInj k l p = LTFin.Fin-inj k l (subst2 _≡_ (SumFin≡Fin k) (SumFin≡Fin l) p) where
+    import Cubical.Data.Fin as LTFin
+
+  FinSet≃FinSet' : FinSet ℓ-zero ≃ FinSet' ℓ-zero
+  FinSet≃FinSet' = Skel∞≃Skel isSetℕ FinInj
 
   -- It's equivalent to a large universe of finite sets:
   FinTardis≃FinSet : FinTardis ≃ FinSet ℓ-zero
   FinTardis≃FinSet =
-    FinTardis ≃⟨ skeletonEquiv ⟩
-    Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Fin n ≃ Y ∥₁ ≃⟨ flip≃ ⟩
-    Σ[ Y ∈ Type ] ∥ Σ[ n ∈ ℕ ] Y ≃ Fin n ∥₁ ≃⟨ idEquiv _ ⟩
-    FinSet' ℓ-zero                          ≃⟨ invEquiv FinSet≃FinSet' ⟩
-    FinSet ℓ-zero ≃∎
+    FinTardis       ≃⟨ skeletonEquiv ⟩
+    FinSet' ℓ-zero  ≃⟨ invEquiv FinSet≃FinSet' ⟩
+    FinSet ℓ-zero   ≃∎
 
     where
       flip≃ = Sigma.Σ-cong-equiv-snd (λ Y → PT.propTrunc≃ (Sigma.Σ-cong-equiv-snd λ n → invEquivEquiv))
