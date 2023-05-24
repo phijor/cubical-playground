@@ -177,33 +177,33 @@ module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
           isCtrFib : isContr (fiber (cong B) q)
           isCtrFib = center , {! !}
 
-module Univalence' {ℓ} {A : Type ℓ} (B : A → Type ℓ) where
-  open EquivToFamily
+-- open import Playground.Universe.Base using (Universe)
 
-  U : Type (ℓ-suc ℓ)
-  U = Connected B
+-- module UnivalenceSmall {ℓ} (V : Univalence ℓ) where
+--   open EquivToFamily
 
-  El : U → Type ℓ
-  El = ⟨_⟩
+--   U : Type (ℓ-suc ℓ)
+--   U = Connected B
 
-  uaU : (X Y : U) → El X ≃ El Y → X ≡ Y
-  uaU _ _ α = Connected≡ B (ua α)
+--   El : U → Type ℓ
+--   El = ⟨_⟩
 
-  uaU-comp : {X Y : U} (α : El X ≃ El Y) → cong El (uaU X Y α) ≡ ua α
-  uaU-comp α = refl
+--   uaU : (X Y : U) → El X ≃ El Y → X ≡ Y
+--   uaU _ _ α = Connected≡ B (ua α)
 
-  import Cubical.Foundations.Univalence.Universe as UnivalentUniverse
+--   uaU-comp : {X Y : U} (α : El X ≃ El Y) → cong El (uaU X Y α) ≡ ua α
+--   uaU-comp α = refl
 
-  module UU = UnivalentUniverse U El uaU uaU-comp
+--   module UU = UnivalentUniverse U El uaU uaU-comp
 
-  pathToEquivU : (X Y : U) → X ≡ Y → El X ≃ El Y
-  pathToEquivU X Y p = pathToEquiv (cong El p)
+--   pathToEquivU : (X Y : U) → X ≡ Y → El X ≃ El Y
+--   pathToEquivU X Y p = pathToEquiv (cong El p)
 
-  minivalence : ∀ {X Y} → (X ≡ Y) ≃ (El X ≃ El Y)
-  minivalence = UU.minivalence
+--   minivalence : ∀ {X Y} → (X ≡ Y) ≃ (El X ≃ El Y)
+--   minivalence = UU.minivalence
 
-  isUnivalentConnected : (S T : U) → isEquiv (pathToEquivU S T)
-  isUnivalentConnected S T = minivalence .snd
+--   isUnivalentConnected : (S T : U) → isEquiv (pathToEquivU S T)
+--   isUnivalentConnected S T = minivalence .snd
 
 module Foo where
   open import Cubical.Functions.Image
