@@ -10,10 +10,21 @@ open import Cubical.Foundations.Structure
 open import Cubical.Foundations.Univalence
 open import Cubical.Functions.Embedding
 open import Cubical.Functions.FunExtEquiv
-open import Cubical.Data.Sigma using (∃-syntax ; Σ≡Prop ; map-snd ; Σ-cong-equiv-snd ; _×_ ; Σ-contractFst)
+open import Cubical.Data.Sigma using (∃-syntax ; ΣPathP ; Σ≡Prop ; map-snd ; Σ-cong-equiv-snd ; _×_ ; Σ-contractFst)
 open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁ ; ∣_∣₁)
 
 module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
+  private
+    transportU : {x y : A} → x ≡ y → B x → B y
+    transportU p = transport (cong B p)
+
+    pathToEquivU : ∀ {x y} → x ≡ y → B x ≃ B y
+    pathToEquivU p .fst = transportU p
+    pathToEquivU p .snd = isEquivTransport (cong B p)
+
+  isUnivalent : Type (ℓ-max ℓ ℓ')
+  isUnivalent = ∀ {x y : A} → isEquiv (pathToEquivU {x} {y})
+
   fiber≃ : (X : Type ℓ') → Type (ℓ-max ℓ ℓ')
   fiber≃ X = Σ[ a ∈ A ] B a ≃ X
 
@@ -31,6 +42,19 @@ module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
 
   Connected≡ : {S T : Connected} → ⟨ S ⟩ ≡ ⟨ T ⟩ → S ≡ T
   Connected≡ = Σ≡Prop isPropIsConnectedTo
+
+  ConnectedElimProp : ∀ {ℓP} {P : Connected → Type ℓP}
+    → (∀ S → isProp (P S))
+    → ((a : A) → P (B a , ∣ a , idEquiv (B a) ∣₁))
+    → (S : Connected) → P S
+  ConnectedElimProp {P = P} propP base =
+    uncurry λ (X : Type _) → PT.elim (λ { ∣fib≃∣ → propP (X , ∣fib≃∣) }) (uncurry goal)
+    where module _ {X : Type _} (a : A) (α : B a ≃ X) where
+      substPath : (B a , _) ≡ (X , _)
+      substPath = Connected≡ (ua α)
+
+      goal : P (X , ∣ a , α ∣₁)
+      goal = subst P substPath (base a)
 
   isConnectedInFiber : (X : Type ℓ') → Type (ℓ-max ℓ ℓ')
   isConnectedInFiber X = Σ[ a ∈ A ] ∥ B a ≃ X ∥₁
@@ -86,6 +110,18 @@ module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
     isPropIsConnectedInFiber X = isOfHLevelRespectEquiv 1 (invEquiv (Σ-contractFst contrA)) PT.isPropPropTrunc
 
     open PropConnectedInFiber isPropIsConnectedInFiber public
+
+  module UnivalentFamily (univ : isUnivalent) where
+    isPropIsConnectedInFiber : (X : Type ℓ') → isProp (isConnectedInFiber X)
+    isPropIsConnectedInFiber X (x , ∣α∣) (y , ∣β∣) = isConnectedInFiber≡ goal where
+      lem : B x ≃ B y
+      lem = {! !}
+
+      goal : x ≡ y
+      goal = invIsEq (univ {x} {y}) lem
+
+    open PropConnectedInFiber isPropIsConnectedInFiber public
+    
 
   module EmbFam (embB : isEmbedding B) where
     isPropIsConnectedInFiber : (X : Type ℓ') → isProp (isConnectedInFiber X)

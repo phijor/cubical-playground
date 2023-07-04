@@ -55,20 +55,3 @@ propImageElim' : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'}
 propImageElim' {A = A} f propIm = fst ∘ restrict-f where
   restrict-f : ∥ A ∥₁ → Image f
   restrict-f = PT.rec propIm (restrictToImage f)
-
--- PropTruncConnectedComponentEquiv : ∀ {ℓ} (A : Type ℓ) → (Σ[ X ∈ Type ℓ ] ∥ A ≃ X ∥₁) ≃ (∥ Σ[ X ∈ Type ℓ ] A ≃ X ∥₁)
--- PropTruncConnectedComponentEquiv {ℓ} A = e , isEquiv-e where
---   e : Σ[ X ∈ Type ℓ ] ∥ A ≃ X ∥₁ → ∥ Σ[ X ∈ Type ℓ ] A ≃ X ∥₁
---   e = uncurry λ X → PT.map (X ,_)
-
---   isEquiv-e : isEquiv e
---   isEquiv-e .equiv-proof = PT.elim (λ _ → isPropIsContr) (uncurry goal) where
---     module _ (X : Type ℓ) (α : A ≃ X) where
---       ctr : fiber e ∣ X , α ∣₁
---       ctr = (X , ∣ α ∣₁) , refl
-
---       ctr-path : (Y : Type ℓ) (β : ∥ A ≃ Y ∥₁) → (p : e (Y , β) ≡ ∣ X , α ∣₁) → ctr ≡ ((Y , β) , p)
---       ctr-path Y = PT.elim {! !} λ β p → {! p!}
-
---       goal : isContr (fiber e ∣ X , α ∣₁)
---       goal = ctr , uncurry (uncurry {! !})

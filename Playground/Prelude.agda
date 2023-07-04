@@ -11,6 +11,9 @@ _∙_ : {ℓ : Level} → {A : Type ℓ} {x y z : A}
   → (p : x ≡ y) → (q : y ≡ z) → x ≡ z
 _∙_ = C._∙_
 
+refl′ : ∀ {ℓ} {A : Type ℓ} → (a : A) → a ≡ a
+refl′ a i = a
+
 -- _$_ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'}
 --   → (f : A → B)
 --   → (a : A)

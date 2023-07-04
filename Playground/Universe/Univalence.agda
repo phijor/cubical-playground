@@ -3,8 +3,8 @@ module Playground.Universe.Univalence where
 open import Playground.Prelude
 open import Playground.Universe.Base
 
-open import Cubical.Foundations.Equiv using (_≃_ ; isEquiv ; equivProof ; isPropIsEquiv)
-open import Cubical.Foundations.Univalence using (ua ; isEquivTransport)
+open import Cubical.Foundations.Equiv using (_≃_ ; isEquiv ; equivProof ; isPropIsEquiv ; invEq)
+open import Cubical.Foundations.Univalence using (ua ; isEquivTransport ; Glue)
 open import Cubical.Foundations.HLevels using (isPropΠ2)
 
 
@@ -24,6 +24,21 @@ module _ {ℓ} (U : Universe ℓ) where
 
   isPropIsUnivalent : isProp isUnivalent
   isPropIsUnivalent = isPropΠ2 λ s t → isPropIsEquiv (pathToEquivU {s} {t})
+
+  module _ (uniU : isUnivalent) where
+    pathToEquivUEquiv : (s t : Code) → (s ≡ t) ≃ (El s ≃ El t)
+    pathToEquivUEquiv s t = pathToEquivU , uniU s t
+
+    uaU : {s t : Code} → (El s ≃ El t) → s ≡ t
+    uaU = invEq (pathToEquivUEquiv _ _)
+
+    uaU-β : {s t : Code} → (α : El s ≃ El t) → cong El (uaU α) ≡ ua α
+    uaU-β α i j = Glue Base {φ = φ} {! !} where
+      Base : Type ℓ
+      Base = {! !}
+
+      φ : I
+      φ = {! !}
 
   module Univalence
     (uaU : (s t : Code) → El s ≃ El t → s ≡ t)

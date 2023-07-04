@@ -4,8 +4,10 @@ open import Playground.Prelude
 open import Playground.Universe.Base
 
 open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.HLevels
 open import Cubical.Functions.Embedding hiding (_↪_)
 open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁)
+open import Cubical.Reflection.RecordEquiv
 
 open Universe
 
@@ -20,6 +22,8 @@ record UniverseEmbeddingStr
   field
     is-emb : isEmbedding f
     decode-equiv : ∀ (A : V .Code) → U .El (f A) ≃ V .El A
+
+unquoteDecl UniverseEmbeddingStrIsoΣ = declareRecordIsoΣ UniverseEmbeddingStrIsoΣ (quote UniverseEmbeddingStr)
 
 open UniverseEmbeddingStr
 
