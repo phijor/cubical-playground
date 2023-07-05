@@ -41,6 +41,10 @@ hasInjectivePos : Container ℓ → Type _
 hasInjectivePos C = (s t : Shape) → Pos s ≡ Pos t → s ≡ t where
   open Container C
 
+hasAllSymmetries : Container ℓ → Type _
+hasAllSymmetries C =  ∀ {s} σ → isContr (Symm {s} σ) where
+  open Container C
+
 module _ (C : Container ℓ) {s : C .Container.Shape} (X : Type ℓ) where
   open Container C hiding (_∼_)
 

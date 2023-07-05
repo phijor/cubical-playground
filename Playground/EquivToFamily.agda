@@ -10,7 +10,7 @@ open import Cubical.Foundations.Structure
 open import Cubical.Foundations.Univalence
 open import Cubical.Functions.Embedding
 open import Cubical.Functions.FunExtEquiv
-open import Cubical.Data.Sigma using (∃-syntax ; ΣPathP ; Σ≡Prop ; map-snd ; Σ-cong-equiv-snd ; _×_ ; Σ-contractFst)
+open import Cubical.Data.Sigma using (∃-syntax ; ΣPathP ; Σ≡Prop ; ΣPathPProp ; map-snd ; Σ-cong-equiv-snd ; _×_ ; Σ-contractFst)
 open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁ ; ∣_∣₁)
 
 module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
@@ -67,6 +67,12 @@ module EquivToFamily {ℓ} {ℓ'} {A : Type ℓ} (B : A → Type ℓ') where
 
   FiberConnected : Type (ℓ-max ℓ (ℓ-suc ℓ'))
   FiberConnected = TypeWithStr ℓ' isConnectedInFiber
+
+  FiberConnected≡ : {x y : FiberConnected}
+    → (ty-path : ⟨ x ⟩ ≡ ⟨ y ⟩)
+    → (fib-path : Path A (str x .fst) (str y .fst))
+    → x ≡ y
+  FiberConnected≡ ty-path fib-path = ΣPathP (ty-path , ΣPathPProp (λ _ → PT.isPropPropTrunc) fib-path)
 
   isConnectedInFiber→isConnectedTo : ∀ {X} → isConnectedInFiber X → isConnectedTo X
   isConnectedInFiber→isConnectedTo {X = X} = uncurry λ a → PT.map (a ,_)
