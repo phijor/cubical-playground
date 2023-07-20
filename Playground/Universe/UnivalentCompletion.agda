@@ -3,7 +3,7 @@
 module Playground.Universe.UnivalentCompletion where
 
 open import Playground.Prelude
-open import Playground.Lift using (unlift ; congLift-unlift-section ; isEmbeddingLift)
+open import Playground.Lift using (unliftPath ; congLift-unliftPath-section)
 open import Playground.Square
 
 open import Playground.Universe.Base
@@ -31,10 +31,10 @@ module Completion {ℓ} (V : Universe ℓ) where
   U .El = Lift ∘ ⟨_⟩
 
   uaU : (s t : U .Code) → U .El s ≃ U .El t → s ≡ t
-  uaU s t α = Connected≡ (V .El) (unlift ⟨ s ⟩ ⟨ t ⟩ (ua α))
+  uaU s t α = Connected≡ (V .El) (unliftPath ⟨ s ⟩ ⟨ t ⟩ (ua α))
 
   uaU-β : (s t : U .Code) (α : U .El s ≃ U .El t) → cong (U .El) (uaU s t α) ≡ ua α
-  uaU-β s t α = congLift-unlift-section {X = ⟨ s ⟩} {Y = ⟨ t ⟩} (ua α)
+  uaU-β s t α = congLift-unliftPath-section {X = ⟨ s ⟩} {Y = ⟨ t ⟩} (ua α)
 
   open import Playground.Universe.Univalence using (isUnivalent ; module Univalence)
 

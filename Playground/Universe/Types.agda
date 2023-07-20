@@ -1,7 +1,7 @@
 module Playground.Universe.Types where
 
 open import Playground.Prelude
-open import Playground.Lift using (unlift ; congLift-unlift-section ; isEmbeddingLift)
+open import Playground.Lift using (unliftPath ; congLift-unliftPath-section)
 
 open import Playground.Universe.Base
 open import Playground.Universe.Univalence
@@ -20,12 +20,12 @@ Lift⁺ {ℓ} = Lift {i = ℓ} {j = ℓ-suc ℓ}
 
 -- The decoding function (Lift⁺) determines paths in the type of codes
 ua𝓤 : ∀ {ℓ} → (A B : Type ℓ) → Lift⁺ A ≃ Lift⁺ B → A ≡ B
-ua𝓤 A B α = unlift A B (ua α)
+ua𝓤 A B α = unliftPath A B (ua α)
 
 -- The action of the decoding on paths (cong Lift⁺) has a section,
--- namely unlift.  This characterizes the univalence function in the universe.
-ua𝓤-β : ∀ {ℓ} → (A B : Type ℓ) (α : Lift⁺ A ≃ Lift⁺ B) → cong Lift⁺ (unlift A B (ua α)) ≡ ua α
-ua𝓤-β A B α = congLift-unlift-section (ua α)
+-- namely unliftPath.  This characterizes the univalence function in the universe.
+ua𝓤-β : ∀ {ℓ} → (A B : Type ℓ) (α : Lift⁺ A ≃ Lift⁺ B) → cong Lift⁺ (unliftPath A B (ua α)) ≡ ua α
+ua𝓤-β A B α = congLift-unliftPath-section (ua α)
 
 -- The universe of ℓ-small types is univalent, with the equivalence derived from `ua𝓤`
 isUnivalent𝓤 : ∀ {ℓ} → isUnivalent (𝓤 ℓ)
