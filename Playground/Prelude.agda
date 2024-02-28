@@ -6,6 +6,9 @@ open import Cubical.Foundations.Prelude as C hiding (_∙_)
   public
 open import Cubical.Foundations.Function
   public
+open import Cubical.Foundations.Equiv
+  renaming (_■ to _≃∎)
+  public
 
 _∙_ : {ℓ : Level} → {A : Type ℓ} {x y z : A}
   → (p : x ≡ y) → (q : y ≡ z) → x ≡ z
@@ -37,3 +40,11 @@ module PathReasoning where
   syntax ≡⟨⟩∎-syntax x y p = x ≡⟨ p ⟩∎ y ∎
 
 open PathReasoning using (≡⟨⟩∎-syntax) public
+
+module _ where
+  infixr 0 _≃⟨⟩_
+  _≃⟨⟩_ : ∀ {ℓ ℓ'} (A : Type ℓ) {B : Type ℓ'} → A ≃ B → A ≃ B
+  A ≃⟨⟩ e = e
+
+ℓ-of : ∀ {ℓ} (A : Type ℓ) → Level
+ℓ-of {ℓ} _ = ℓ
