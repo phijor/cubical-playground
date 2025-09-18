@@ -17,14 +17,8 @@ _∙_ = C._∙_
 refl′ : ∀ {ℓ} {A : Type ℓ} → (a : A) → a ≡ a
 refl′ a i = a
 
--- _$_ : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'}
---   → (f : A → B)
---   → (a : A)
---   → B
--- f $ a = f a
--- {-# INLINE _$_ #-}
-
--- infixr 3 _$_
+the : ∀ {ℓ} (A : Type ℓ) → (a : A) → A
+the A a = a
 
 module PathReasoning where
   private
@@ -48,3 +42,25 @@ module _ where
 
 ℓ-of : ∀ {ℓ} (A : Type ℓ) → Level
 ℓ-of {ℓ} _ = ℓ
+
+private
+  variable
+    ℓ : Level
+    A B C : Type ℓ
+
+_⨟_ : (f : A → B) (g : B → C) → A → C
+f ⨟ g = λ a → g (f a)
+
+_→⟨_⟩_ : (A : Type ℓ) → (A → B) → (B → C) → (A → C)
+_ →⟨ f ⟩ g = f ⨟ g
+
+_→≃⟨_⟩_ : (A : Type ℓ) → (A ≃ B) → (B → C) → (A → C)
+_ →≃⟨ e ⟩ g = equivFun e ⨟ g
+
+_→∎ : (A : Type ℓ) → A → A
+A →∎ = λ a → a
+{-# INLINE _→∎ #-}
+
+infixr 0 _→⟨_⟩_
+infixr 0 _→≃⟨_⟩_
+infix 1 _→∎

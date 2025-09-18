@@ -1,31 +1,48 @@
 {
   description = "An Agda project";
-  
+
   inputs = {
     flake-compat = {
-      url = github:edolstra/flake-compat;
+      url = "github:edolstra/flake-compat";
       flake = false;
     };
-    nixpkgs.url = github:NixOS/nixpkgs/nixpkgs-unstable;
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    cubical = {
+      url = "github:agda/cubical";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
   };
 
-  outputs = { self, nixpkgs, flake-compat, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-compat,
+      flake-utils,
+      cubical,
+      ...
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
+          overlays = [ cubical.overlays.default ];
         };
-        inherit (pkgs) agda agdaPackages;
-        deps = [ agdaPackages.cubical ];
+
+        inherit (pkgs) agdaPackages;
         cubical-playground = agdaPackages.mkDerivation {
           pname = "cubical-playground";
           version = "0.1.0";
-          src = builtins.path { path = ./.; name = "agda-cubical-playground"; };
+          src = builtins.path {
+            path = ./.;
+            name = "agda-cubical-playground";
+          };
           everythingFile = "./Playground/Index.lagda.md";
-          buildInputs = deps;
-
-          nativeBuildInputs = [ pkgs.glibcLocales ];
-          LC_ALL = "en_US.UTF-8";
+          buildInputs = [ agdaPackages.cubical ];
 
           meta = { };
         };
