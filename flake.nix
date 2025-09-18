@@ -7,33 +7,22 @@
       flake = false;
     };
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    cubical = {
-      url = "github:agda/cubical";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
-    };
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      flake-compat,
       flake-utils,
-      cubical,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ cubical.overlays.default ];
-        };
+        pkgs = nixpkgs.legacyPackages.${system};
 
         inherit (pkgs) agdaPackages;
+        cubical = agdaPackages.cubical;
         cubical-playground = agdaPackages.mkDerivation {
           pname = "cubical-playground";
           version = "0.1.0";
@@ -42,7 +31,7 @@
             name = "agda-cubical-playground";
           };
           everythingFile = "./Playground/Index.lagda.md";
-          buildInputs = [ agdaPackages.cubical ];
+          buildInputs = [ cubical ];
 
           meta = { };
         };
